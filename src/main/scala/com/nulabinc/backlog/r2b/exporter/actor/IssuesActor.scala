@@ -6,6 +6,7 @@ import akka.actor.SupervisorStrategy.Restart
 import akka.actor.{Actor, ActorRef, OneForOneStrategy, Props}
 import akka.routing.SmallestMailboxPool
 import com.nulabinc.backlog.migration.common.conf.BacklogConfiguration
+import com.nulabinc.backlog.migration.common.domain.BacklogTextFormattingRule
 import com.nulabinc.backlog.migration.common.utils.{Logging, ProgressBar}
 import com.nulabinc.backlog.r2b.exporter.core.ExportContext
 import com.osinka.i18n.Messages
@@ -15,9 +16,9 @@ import scala.concurrent.duration._
 /**
   * @author uchida
   */
-private[exporter] class IssuesActor(exportContext: ExportContext) extends Actor with BacklogConfiguration with Logging {
+private[exporter] class IssuesActor(exportContext: ExportContext, backlogTextFormattingRule: BacklogTextFormattingRule) extends Actor with BacklogConfiguration with Logging {
 
-  private[this] val strategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+  private[this] val strategy = OneForOneStrategy(maxNrOfRetries = 5, withinTimeRange = 10 seconds) {
     case _ => Restart
   }
 
@@ -33,7 +34,7 @@ private[exporter] class IssuesActor(exportContext: ExportContext) extends Actor 
   def receive: Receive = {
     case IssuesActor.Do =>
       val router     = SmallestMailboxPool(akkaMailBoxPool, supervisorStrategy = strategy)
-      val issueActor = context.actorOf(router.props(Props(new IssueActor(exportContext))))
+      val issueActor = context.actorOf(router.props(Props(new IssueActor(exportContext, backlogTextFormattingRule))))
 
       (0 until (allCount, limit))
         .foldLeft(Seq.empty[Int]) { (acc, offset) =>

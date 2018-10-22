@@ -1,14 +1,14 @@
 package com.nulabinc.backlog.r2b.exporter.convert
 
 import javax.inject.Inject
-
 import com.nulabinc.backlog.migration.common.conf.BacklogConstantValue
 import com.nulabinc.backlog.migration.common.convert.{Convert, Writes}
-import com.nulabinc.backlog.migration.common.domain.{BacklogAttachment, BacklogAttributeInfo, BacklogChangeLog}
+import com.nulabinc.backlog.migration.common.domain.{BacklogAttachment, BacklogAttributeInfo, BacklogChangeLog, BacklogTextFormattingRule}
 import com.nulabinc.backlog.migration.common.utils.{DateUtil, FileUtil, Logging, StringUtil}
 import com.nulabinc.backlog.r2b.mapping.service.{MappingPriorityService, MappingStatusService, MappingUserService}
 import com.nulabinc.backlog.r2b.redmine.conf.RedmineConstantValue
 import com.nulabinc.backlog.r2b.redmine.domain.PropertyValue
+import com.nulabinc.backlog.r2b.utils.TextileUtil
 import com.nulabinc.backlog4j.CustomField.FieldType
 import com.taskadapter.redmineapi.bean.JournalDetail
 
@@ -19,7 +19,8 @@ private[exporter] class JournalDetailWrites @Inject()(propertyValue: PropertyVal
                                                       customFieldValueWrites: CustomFieldValueWrites,
                                                       mappingPriorityService: MappingPriorityService,
                                                       mappingStatusService: MappingStatusService,
-                                                      mappingUserService: MappingUserService)
+                                                      mappingUserService: MappingUserService,
+                                                      backlogTextFormattingRule: BacklogTextFormattingRule)
     extends Writes[JournalDetail, BacklogChangeLog]
     with Logging {
 
@@ -93,7 +94,7 @@ private[exporter] class JournalDetailWrites @Inject()(propertyValue: PropertyVal
         propertyValue.trackers.find(tracker => StringUtil.safeEquals(tracker.getId.intValue(), value)).map(_.getName)
       case RedmineConstantValue.Attr.CATEGORY =>
         propertyValue.categories.find(category => StringUtil.safeEquals(category.getId.intValue(), value)).map(_.getName)
-      case _ => Option(value)
+      case _ => Option(TextileUtil.convert(value, backlogTextFormattingRule))
     }
 
   private[this] def field(detail: JournalDetail): String = detail.getProperty match {
@@ -103,7 +104,7 @@ private[exporter] class JournalDetailWrites @Inject()(propertyValue: PropertyVal
         .map(_.name)
         .getOrElse {
           val message = propertyValue.customFieldDefinitions.map(c => s"${c.id}: ${c.name}").mkString("\n")
-          throw new RuntimeException(s"custom field id not found [${detail.getName}]\nAvailable custom fields are:\n$message")
+          throw new RuntimeException(s"custom field id not found. Custom field name: ${detail.getName}\nAvailable custom fields are:\n$message")
         }
     case RedmineConstantValue.ATTACHMENT =>
       BacklogConstantValue.ChangeLog.ATTACHMENT
