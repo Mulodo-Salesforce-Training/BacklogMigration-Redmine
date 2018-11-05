@@ -4,7 +4,7 @@ scapegoatVersion in ThisBuild := "1.3.3"
 
 lazy val commonSettings = Seq(
   organization := "com.nulabinc",
-  version := "0.13.0b8",
+  version := "0.13.0b10-SNAPSHOT",
   scalaVersion := "2.12.7",
   scalacOptions ++= Seq(
     "-language:reflectiveCalls",
@@ -45,7 +45,7 @@ lazy val root = (project in file("."))
     name := "backlog-migration-redmine",
     libraryDependencies ++= {
       val catsVersion = "1.4.0"
-      val akkaVersion = "2.5.9"
+      val akkaVersion = "2.5.17"
       Seq(
         "org.typelevel"     %% "cats-core"      % catsVersion,
         "org.typelevel"     %% "cats-free"      % catsVersion,
